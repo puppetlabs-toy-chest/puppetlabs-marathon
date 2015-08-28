@@ -1,0 +1,14 @@
+{
+  "name": "puppetlabs-marathon",
+  "version": "0.1.0",
+  "author": "puppetlabs",
+  "summary": "A module to install and manage the Marathon Mesos framework",
+  "license": "Apache-2.0",
+  "source": "https://github.com/puppetlabs/puppetlabs-marathon",
+  "project_page": "https://github.com/puppetlabs/puppetlabs-marathon",
+  "issues_url": "https://github.com/puppetlabs/puppetlabs-marathon/issues",
+  "dependencies": [
+    {"name":"puppetlabs-stdlib","version_requirement":">= 1.0.0"}
+  ]
+}
+
