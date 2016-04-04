@@ -1,79 +1,216 @@
-# marathon
+# marathon Puppet module
 
-#### Table of Contents
+This module is intended to manage the Marathon installation.
+It can install the package, configure startup scripts, create config
+files and run the service.
 
-1. [Overview](#overview)
-2. [Module Description - What the module does and why it is useful](#module-description)
-3. [Setup - The basics of getting started with marathon](#setup)
-    * [What marathon affects](#what-marathon-affects)
-    * [Setup requirements](#setup-requirements)
-    * [Beginning with marathon](#beginning-with-marathon)
-4. [Usage - Configuration options and additional functionality](#usage)
-5. [Reference - An under-the-hood peek at what the module is doing and how](#reference)
-5. [Limitations - OS compatibility, etc.](#limitations)
-6. [Development - Guide for contributing to the module](#development)
+## Sample Usage
 
-## Overview
+Without parameters:
 
-A one-maybe-two sentence summary of what the module does/what problem it solves.
-This is your 30 second elevator pitch for your module. Consider including
-OS/Puppet version it works with.
+```puppet
+class { 'marathon' :}
+```
 
-## Module Description
+With parameters:
 
-If applicable, this section should have a brief description of the technology
-the module integrates with and what that integration enables. This section
-should answer the questions: "What does this module *do*?" and "Why would I use
-it?"
+```puppet
+class { 'marathon' :
+  zk_servers      => ['node1','node2'],
+  startup_manage  => false,
+  launcher_manage => false,
+  libprocess_ip   => '192.168.0.1',
+  mesos_principal => 'admin',
+  mesos_secret    => 'pass',
+  http_user       => 'user',
+  http_password   => 'password',
+  options         => {
+    'event_subscriber' => 'http_callback',
+  }
+}
+```
 
-If your module has a range of functionality (installation, configuration,
-management, etc.) this is the time to mention it.
+Using the Hiera YAML file:
 
-## Setup
+```yaml
+marathon::zk_servers:
+- node1
+- node2
+marathon::libprocess_ip: 192.168.0.1
+marathon::options:
+  event_subscriber: http_callback
+```
 
-### What marathon affects
+Marathon options will be merged across the Hiera hierarchy levels
+so you can add more options to the hash.
 
-* A list of files, packages, services, or operations that the module will alter,
-  impact, or execute on the system it's installed on.
-* This is a great place to stick any warnings.
-* Can be in list or paragraph form.
+## Parameters
 
-### Setup Requirements **OPTIONAL**
+### `package_manage`
 
-If your module requires anything extra before setting up (pluginsync enabled,
-etc.), mention it here.
+Should the module try to install a marathon package?
+Default: true
 
-### Beginning with marathon
+### `package_name`
 
-The very basic steps needed for a user to get the module up and running.
+The real name of the marathon package.
+Default: marathon
 
-If your most recent release breaks compatibility or requires particular steps
-for upgrading, you may wish to include an additional section here: Upgrading
-(For an example, see http://forge.puppetlabs.com/puppetlabs/firewall).
+### `package_ensure`
 
-## Usage
+The version of marathon package to install.
+Default: present
 
-Put the classes, types, and resources for customizing, configuring, and doing
-the fancy stuff with your module here.
+### `service_manage`
 
-## Reference
+Should the module try to work with marathon service?
+Default: true
 
-Here, list the classes, types, providers, facts, etc contained in your module.
-This section should include all of the under-the-hood workings of your module so
-people know what the module is touching on their system but don't need to mess
-with things. (We are working on automating this section!)
+### `service_enable`
 
-## Limitations
+Should the the module enable and run or disable and stop the service?
+Default: true
 
-This is where you list OS compatibility, version compatibility, etc.
+### `service_name`
 
-## Development
+The name of the service to manage.
+Default: marathon
 
-Since your module is awesome, other users will want to play with it. Let them
-know what the ground rules for contributing are.
+### `service_provider`
 
-## Release Notes/Contributors/Etc **Optional**
+Override the service provider if you have reasons to do so.
+Default: undef
 
-If you aren't using changelog, put your release notes here (though you should
-consider using changelog). You may also add any additional sections you feel are
-necessary or important to include here. Please use the `## ` header.
+### `zk_servers`
+
+The list of Zookeeper servers used by Mesos and Marathon
+It will generate "master" and "zk" options with
+zookeeper urls URLs. Empty array will disable these options
+and the value from */etc/mesos/zk* will be used.
+Default: ['localhost']
+
+### `zk_marathon_servers`
+
+The list of Zookeeper servers for Marathon to use for storing its state.
+Will be equal to *zk_servers* unless alternative value is defined.
+Default: undef
+
+### `zk_default_port`
+
+The default Zookeeper port to use if the server is given without
+a port like "ip:port"
+Default: 2181
+
+### `zk_mesos_path`
+
+The Zookeeper path used by Mesos.
+Default: mesos
+
+### `zk_marathon_path`
+
+The Zookeeper path used by Marathon.
+Default: marathon
+
+### `libprocess_ip`
+
+The IP address used by libprocess to connect to the remote Mesos master
+Must be set to the real IP address of the node. If unset, the Marathon
+service will only be able to work with the local Mesos master.
+Default: 127.0.0.1
+
+### `java_opts`
+
+A string of Java options
+Default: -Xmx512m
+
+### `java_home`
+
+Path to a custom Java home
+Default: undef
+
+### `mesos_principal`
+
+Use this principal name for Mesos master connection.
+Default: undef
+
+### `mesos_secret`
+
+Use this password for Mesos master connection.
+Default: undef
+
+### `mesos_masters`
+
+This option can contain the URL of the Mesos master and will be used if
+no zookeeper are provided.
+Default: "http://localhost:5050"
+
+### `secret_file_path`
+
+The path to the file used to store the Mesos secret.
+Default: /etc/marathon/auth_secret
+
+### `config_base_path`
+
+The path to the Marathon configuration directory.
+Default: /etc/marathon
+
+### `config_dir_path`
+
+The path to the directory used by custom Marathon options.
+Default: /etc/marathon/conf
+
+### `config_file_path`
+
+The path to the main Marathon config file.
+Default: /etc/default/${service_name}
+
+### `startup_manage`
+
+Should the module try to install init/upstart scripts for the service?
+You should set *startup_system* if you enable this.
+Default: true
+
+### `launcher_manage`
+
+Should the module try to install the launcher shell script?
+Default: true
+
+### `launcher_path`
+
+The path to the launcher shell script file.
+Default: /usr/bin/marathon
+
+### `jar_file_path`
+
+The path to the actual Marathon jar file.
+Default: undef
+
+### startup_system
+
+Which startup files should be installed?
+Default: undef
+
+### run_user
+
+Run the service by this system user in the startup files.
+User will NOT be created.
+Default: undef
+
+### run_group
+
+Run the service by this system group in the startup files.
+Group will NOT be created.
+Default: undef
+
+### `options`
+
+This hash can contain additional Marathon options
+You can find the list of possible values and their description
+[here](https://mesosphere.github.io/marathon/docs/command-line-flags.html).
+Default: {}
+
+If your package contains startup files and the launcher file together
+with the jar file you may want to disable *manage_startup* and
+*manage_launcher* options if you want to keep the versions from
+your package.
+
